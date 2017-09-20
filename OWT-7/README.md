@@ -1,22 +1,55 @@
-## OWT-7: Database communication in Karaf via services
+## OWT-7: Database Communication in Karaf via Services
 
 Table of Contents
 =================
-# [TOC]
+ * [1\. General Notes](#1-general-notes)
+      * [Cleaning Karaf](#cleaning-karaf)
+  * [2\. Maven Module: bundle\-parent](#2-maven-module-bundle-parent)
+  * [3\. Maven Module: bundle\-lib](#3-maven-module-bundle-lib)
+  * [4\. Maven Module: bundle\-api](#4-maven-module-bundle-api)
+      * [EchoDatabaseService Methods](#echodatabaseservice-methods)
+  * [5\. Maven Module: bundle\-impl](#5-maven-module-bundle-impl)
+    * [Connecting the services](#connecting-the-services)
+      * [Injecting EchoDatabaseService](#injecting-echodatabaseservice)
+  * [6\. Maven Module: bundle\-rest](#6-maven-module-bundle-rest)
+  * [7\. Maven Module: bundle\-ui](#7-maven-module-bundle-ui)
+  * [8\. Maven Module: bundle\-db](#8-maven-module-bundle-db)
+      * [Hibernate ORM](#hibernate-orm)
+      * [Persistence\-speciﬁc instructions](#persistence-speci%EF%AC%81c-instructions)
+      * [Auto\-Populating the Manifest file](#auto-populating-the-manifest-file)
+      * [The persistence\.xml file](#the-persistencexml-file)
+    * [ORM Entities](#orm-entities)
+      * [Entity Definition](#entity-definition)
+    * [EchoServiceDao: Transactions](#echoservicedao-transactions)
+      * [EchoServiceDao: PersistenceContext and EntityManager](#echoservicedao-persistencecontext-and-entitymanager)
+      * [The Manifest](#the-manifest)
+    * [Installing the Bundles on Karaf](#installing-the-bundles-on-karaf)
+      * [Installing dependencies](#installing-dependencies)
+      * [Installing Database Interaction Dependencies](#installing-database-interaction-dependencies)
+      * [Apache Aries](#apache-aries)
+    * [Installing: bundle\-lib](#installing-bundle-lib)
+    * [Installing: bundle\-api](#installing-bundle-api)
+    * [Installing: bundle\-impl](#installing-bundle-impl)
+    * [Installing: bundle\-rest](#installing-bundle-rest)
+    * [Installing: bundle\-ui](#installing-bundle-ui)
+    * [Installing: bundle\-db](#installing-bundle-db)
+      * [Verify Database communication](#verify-database-communication)
+      * [Configure The Datasource](#configure-the-datasource)
+      * [JDBC Registration test](#jdbc-registration-test)
+      * [JNDI Registration Test](#jndi-registration-test)
+      * [Jdbc Test Query](#jdbc-test-query)
+      * [DataSource is a service](#datasource-is-a-service)
 
 
 ## 1. General Notes
 
-Hibernate ORM (Hibernate in short) is an object-relational mapping tool for the Java programming language. It provides a framework for mapping an object-oriented domain model to a relational database. Hibernate handles object-relational impedance mismatch problems by replacing direct, persistent database accesses with high-level object handling functions.
-
 The purpose of this tutorial is to showcase database communication in an OSGi service. In particular it will:
-1. Enhance the service(s) used in OWT-6, and integrate Hibernate into them.
+1. Enhance the service(s) used in OWT-6, and integrate `Hibernate ORM` technology into them.
 2. Store and read data from an underlying database.
 
-
->The code for this tutorial is available in the `code` directory. It is recommended to have it checked-out locally and refer to it while going through the tutorial. 
->All the maven modules detailed below have the standard maven directory structure. 
->The code of this tutorial builds on the base provided by OWT-5. As a result, only new concepts/features will be explained here.
+> The code for this tutorial is available in the `code` directory. It is recommended to have it checked-out locally and refer to it while going through the tutorial.
+> All the maven modules detailed below have the standard maven directory structure.
+> The code of this tutorial builds on the base provided by OWT-6. As a result, only new concepts/features will be explained here.
 
 
 > #### Cleaning Karaf
@@ -38,11 +71,16 @@ Library bundle. No changes from OWT-5.
 ## 4. Maven Module: bundle-api
 The Services container bundle. A new service specification has been added. The `EchoDatabaseService` which will handle the data communication with the database layer .
 
-```java
-    Integer create(MessageDTO messageDTO);
-    MessageDTO get(Integer id);
-    void update(Integer id);
-```
+> #### EchoDatabaseService Methods
+> The `create` method inserts a row in the database containing message information.
+> The `get` method retrieves that line.
+> The `update` method will update the data of an existing entry.
+>
+> ```java
+>     Integer create(MessageDTO messageDTO);
+>     MessageDTO get(Integer id);
+>     void update(Integer id);
+> ```
 
 
 
@@ -53,14 +91,18 @@ The Service implementation module.
 ### Connecting the services
 The implementation of EchoService must communicate with the database bundle via a new OSGi service EchoDatabaseService which will handle that interaction.
 To be able to call the new OSGi service, it must be injected properly:
-```java
-    //...
-    @Inject
-    @OsgiService
-    private EchoDatabaseService EchoDatabaseService;   
-   /// ...
-```
 
+> #### Injecting EchoDatabaseService
+> The `@Inject` annotation will pass an instance (or _the_ instance, if referring to a singleton) of the referenced object.
+> The `@OsgiService` annotation specifies that it is an OSGi Service that is injected.
+>
+> ```java
+>     ...
+>     @Inject
+>     @OsgiService
+>     private EchoDatabaseService EchoDatabaseService;
+>     ...
+> ```
 
  ## 6. Maven Module: bundle-rest
 
@@ -72,43 +114,48 @@ This bundle hosts the Angular web application. No changes from OWT-6.
 
 
 ## 8. Maven Module: bundle-db
+This bundle contains all the database-related components. It contains the `persistence.xml` file, along with the following three packages:
 
-This bundle contains all the database interaction components. It contains the persistence.xml along with three packages:
+- _com.owt7.db_ package: The `Data Access Object (DAO)` class, used to interact with the database
+- _com.owt7.model_ package: The `ORM Entity` objects, analogous to database tables.
+- _com.owt7.service_ package: The implementation(s) of the `EchoDatabaseService` service.
 
-- `db package`: The specification(s) of database layer services
-- `model package`: The Entities
-- `service`: The implementation(s) of db package service specifications.
+> #### Hibernate ORM
+> Hibernate ORM (Hibernate in short) is an Object-Relational Mapping tool for the Java programming language. It provides a framework for mapping an object-oriented domain model to a relational database. Hibernate handles object-relational impedance mismatch problems by replacing direct, persistent database accesses with high-level object handling functions.
 
-
-
->### Persistence-speciﬁc instructions
+>#### Persistence-speciﬁc instructions
+>A persistence bundle is an OSGi bundle that contains one or more persistence descriptors (persistence.xml files), and has a Meta-Persistence
+>header in the bundle manifest, `META-INF/MANIFEST.MF`. This header lists all the locations of persistence.xml files in the persistence bundle.
+>When this header is present, the default location, `META-INF/persistence.xml`, is added by default. Therefore, when the persistence.xml files
+>are in the default location, the Meta-Persistence header must be present, but its content can be empty (a single space). The example of a
+> Meta-Persistence header below, defines a persistence bundle in entities.
 >
->A persistence bundle is an OSGi bundle that contains one or more persistence descriptors (persistence.xml files) and has a Meta-Persistence 
->header in the bundle manifest, META-INF/MANIFEST.MF. This header lists all the locations of persistence.xml files in the persistence bundle. 
->When this header is present, the default location, `META-INF/persistence.xml`, is added by default. Therefore, when the persistence.xml files 
->are in the default location, the Meta-Persistence header must be present, but its content can be empty (a single space). The following 
->example of a Meta-Persistence header defines a persistence bundle in entities. It could have more than one peristant `Meta-Persistence` 
->entries though. Any persistence.xml files that are in the default location can also be used.
->In OSGi, `DynamicImport-Package` attribute is used in the MANIFEST.MF file to specify the patterns of packages that are not found in the 
->normal bundle contents or Import-Package field. If the package is not available in the initial resolution process, it will not fail, but will 
->be attempted to resolve every time a class from the package is required. In this case `hibernate` and `javassist` packages are included.
+> Any persistence.xml files that are in the default location can also be used. In OSGi, `DynamicImport-Package` attribute is used in the MANIFEST.MF
+> file to specify the patterns of packages that are not found in the normal bundle contents or Import-Package field. If the package is not available
+> in the initial resolution process, it will not fail, but the container will attempt to resolve the dependency again, every time a class from the package is required.
+> In this case, the `hibernate` and `javassist` packages are included.
+>
 
->In order not to enter manually the mandatory entries to the MANIFEST.MF, `org.apache.felix maven-bundle-plugin` can be used for declaring 
->these entries at pom.xml:
+> #### Auto-Populating the Manifest file
+> In order avoid entering the mandatory entries to the `MANIFEST.MF` file manually , the `org.apache.felix maven-bundle-plugin` can be used for declaring these entries at pom.xml:
 >
 >```xml
-><!-- ... -->
+>...
 ><Meta-Persistence>META-INF/persistence.xml</Meta-Persistence>
-><DynamicImport-Package>org.hibernate,org.hibernate.proxy,javassist.util.proxy</ DynamicImport-Package>
-><!-- ... -->
+><DynamicImport-Package>org.hibernate,org.hibernate.proxy,javassist.util.proxy</DynamicImport-Package>
+>...
 >```
 
 
->### persistence.xml
+>#### The persistence.xml file
 >
->The persistence.xml file is a standard configuration file in JPA. It has to be included in the META-INF directory inside the JAR file that 
->contains the entity beans. The persistence.xml file must define a persistence-unit with a unique name in the current scoped classloader. The 
->provider attribute specifies the underlying implementation of the JPA EntityManager.
+> The persistence.xml file is contains the JPA configuration of the bundle. 
+> The `name` attribute must be unique, as discussed. The `transaction-type` defines the way transactions are handled.
+> The `datasource` is a `JDBC` URL of the datasource that must be configured within Karaf. 
+> The `class` entry(ies) declare the `ORM Entity` classes that will be used by the persistence unit.
+> The `properties` tag allows to define specific instructions to the JPA provider, `Hibernate` in this case. 
+> The `hibernate.hbm2ddl.auto/update` name/value pair in this example, tells Hibernate to update the target database structure to what is defined
+> within the application sources, every time the persistence unit is reconnected to the DB.
 >
 >```xml
 >   <persistence-unit name="owt7PU" transaction-type="JTA">
@@ -122,38 +169,37 @@ This bundle contains all the database interaction components. It contains the pe
 >        </properties>
 >    </persistence-unit>
 >```
->
 
 
 
->### Entities
->
->An entity is a lightweight persistence domain object. Typically an entity represents a table in a relational database, and each entity 
->instance corresponds to a row in that table. The primary programming artifact of an entity is the entity class, although entities can use 
->helper classes. The persistent state of an entity is represented either through persistent fields or persistent properties. These fields or 
->properties use object/relational mapping annotations to map the entities and entity relationships to the relational data in the underlying 
->data store.
->
->### Defining An Entity
+### ORM Entities
+
+An entity is a lightweight persistence domain object. Typically, an entity represents a table in a relational database, and each entity
+instance corresponds to a row in that table. The primary programming artifact of an entity is the entity class, although entities can use
+helper classes. The persistent state of an entity is represented either through persistent fields or persistent properties. These fields or
+properties use object/relational mapping annotations to map the entities and entity relationships to the relational data in the underlying
+data store.
+
+>#### Entity Definition
 >
 >The `@Id` annotation marks a field as a primary key field.
 >
->The `@GeneratedValue` annotation may be applied to a primary key property or field of an entity or mapped superclass in conjunction 
-with the Id annotation. The use of the GeneratedValue annotation is only required to be supported for simple primary keys. Use of 
+>The `@GeneratedValue` annotation may be applied to a primary key property or field of an entity or mapped superclass in conjunction
+with the Id annotation. The use of the GeneratedValue annotation is only required to be supported for simple primary keys. Use of
 the GeneratedValue annotation is not supported for derived primary keys.
-> - _strategy_(Optional): The primary key generation strategy that the persistence provider must use to generate the annotated 
+> - `strategy` _(Optional)_: The primary key generation strategy that the persistence provider must use to generate the annotated
 >entity primary key.
-> - _generator_ (Optional): The name of the primary generator to use as specified in the SequenceGenerator or TableGenerator.
+> - `generator` _(Optional)_: The name of the primary generator to use as specified in the SequenceGenerator or TableGenerator.
 >
 >
->The `@SequenceGenerator` annotation defines a primary key generator that may be referenced by name when a generator element is 
->specified for the GeneratedValue annotation.A sequence generator may be specified on the entity class or on the primary key field 
+>The `@SequenceGenerator` annotation defines a primary key generator that may be referenced by name when a generator element is
+>specified for the GeneratedValue annotation.A sequence generator may be specified on the entity class or on the primary key field
 >or property.
 >@SequenceGenerator arguments:
->- _name_ (Required): A unique generator name that can be referenced by one or more classes to be the generator for primary key values.
->- _sequenceName_ (Optional): The name of the database sequence object from which to obtain primary key values.
->- _initialValue_ (Optional): The value from which the sequence object is to start generating.
->- _allocationSize_ (Optional): The amount to increment by when allocating sequence numbers from the sequence.
+>- `name` _(Required)_: A unique generator name that can be referenced by one or more classes to be the generator for primary key values.
+>- `sequenceName` _(Optional)_: The name of the database sequence object from which to obtain primary key values.
+>- `initialValue` _(Optional)_: The value from which the sequence object is to start generating.
+>- `allocationSize` _(Optional)_: The amount to increment by when allocating sequence numbers from the sequence.
 >
 >
 >```java
@@ -167,45 +213,42 @@ the GeneratedValue annotation is not supported for derived primary keys.
 >            allocationSize=20
 >        )
 >    private Integer id;
->       
->// private fields + getters and setters
+>    ...
 >```
 
 >
->### The database service: EchoServiceDao
+>### EchoServiceDao: Transactions
 >
->The `@Transactional` (javax.transaction.Transactional) annotation provides the application the ability to declaratively control 
->transaction boundaries on CDI managed beans, as well as classes defined as managed beans by the Java EE specification, at both the 
+>The `@Transactional` (javax.transaction.Transactional) annotation provides the application the ability to declaratively control
+>transaction boundaries on CDI managed beans, as well as classes defined as managed beans by the Java EE specification, at both the
 >class and method level where method level annotations override those at the class level.
 >
->The  EchoServiceDao
 >```java
 >
->@Singleton
->@Transactional
->@OsgiServiceProvider(classes = { EchoServiceDao.class })
->public class EchoServiceDaoImpl implements EchoServiceDao {
-> 
->    //...
+> @Singleton
+> public class EchoServiceDao  {
 >
+> @Transactional
+> public Integer create(MessageDTO messageDTO) {
+>    ...
 >```
 
 >
->#### PersistenceContext and EntityManager
->The `EntityManager` itself is created by the container using the information in the persistence.xml, so to use it at runtime, we 
->simply need to request it be injected into one of our components. We do this via @PersistenceContext. The `@PersistenceContext` 
->annotation can be used on any CDI bean, Servlet, Servlet Listener, Servlet Filter, or JSF ManagedBean. Also note that a transaction 
+>#### EchoServiceDao: PersistenceContext and EntityManager
+>The `EntityManager` itself is created by the container using the information in the persistence.xml, so to use it at runtime, we
+>simply need to request it be injected into one of our components. We do this via @PersistenceContext. The `@PersistenceContext`
+>annotation can be used on any CDI bean, Servlet, Servlet Listener, Servlet Filter, or JSF ManagedBean. Also note that a transaction
 >is required for any of the create, update or delete methods of the EntityManager to work.
 >
 >Example usage of EntityManager at the EchoServiceDao:
 >```java
->// EntityManager declaration:
->	@PersistenceContext(unitName = "owt7PU")
->	private EntityManager em;
->  
->	//EntityManager storing the messageChat entity:
->	em.persist(messageChat);
->
+>   // EntityManager declaration:
+>   @PersistenceContext(unitName = "owt7PU")
+>   private EntityManager em;
+> 
+>   //EntityManager storing the messageChat entity:
+>   em.persist(messageChat);
+>   ...
 >```
 >
 >
@@ -252,7 +295,7 @@ feature:install war
 
 
 ####  Apache Aries
- The Aries project will deliver a set of pluggable Java components enabling an enterprise OSGi application programming model. This includes implementations and extensions of applicationfocused specifications deﬁned by the OSGi Alliance Enterprise Expert Group (EEG) and an assembly format for multi-bundle applications, for deployment to a variety of OSGi based runtimes.
+ The Aries project will deliver a set of pluggable Java components enabling an enterprise OSGi application programming model. This includes implementations and extensions of application focused specifications defined by the OSGi Alliance Enterprise Expert Group (EEG) and an assembly format for multi-bundle applications, for deployment to a variety of OSGi based runtimes.
 
 
  Enable the database related features :
@@ -317,11 +360,11 @@ View all tables of the datasource:
 
 ####  Configure The Datasource
  
-To configoure the datasource `owt7-ds` via  Karaf cmd enter the following lines:
+To configure the datasource `owt7-ds` via  Karaf cmd enter the following lines:
 The name `owt7-ds` has been already declared at `persistence.xml`
 
 ```
-config:edit org.ops4j.datasource-OWT7; 
+config:edit org.ops4j.datasource-OWT7;
 config:property-set osgi.jdbc.driver.name H2;
 config:property-set databaseName test;
 config:property-set user sa;
@@ -338,7 +381,7 @@ Wait process to finish at log :
 To list all the JDBC datasources installed in Karaf:
 
 ```
-	 jdbc:ds-list
+     jdbc:ds-list
 ```
 
  ![](img/datasourceList.png)
@@ -346,23 +389,27 @@ To list all the JDBC datasources installed in Karaf:
 
 #### JNDI Registration Test
 
-Since bundle uses jpa, what is actually does is a jndi-lookup. To veiw registered jndi-lookups in Karaf cmd:
+Since bundle uses jpa, what is actually does is a jndi-lookup. To view registered jndi-lookups in Karaf cmd:
 
+```
  jndi:names
+ ```
 
  ![](img/registeredJndi.png)
 
 
 #### Jdbc Test Query
 
+```
 jdbc:query owt7-ds select 1
+```
 
 
-After istallation:
+After installation:
 
 #### DataSource is a service
 
-To list all the services that implemt javax.sql.DataSource
+To list all the services that implement javax.sql.DataSource
 
     service:list javax.sql.DataSource
 
@@ -381,4 +428,5 @@ Calling the EchoService at http://localhost:8181/:
  Execute query toe H2-DB by: `jdbc:query owt7-ds select * from messagechat`
 
  ![](img/messageChatTable.png)
+
 
