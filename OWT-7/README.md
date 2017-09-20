@@ -75,122 +75,142 @@ This bundle hosts the Angular web application. No changes from OWT-6.
 
 This bundle contains all the database interaction components. It contains the persistence.xml along with three packages:
 
-- db package
-The specification(s) of database layer services
-- model package
-The Entities
-- -service
-The implementation(s) of db package service specifications.
+- `db package`: The specification(s) of database layer services
+- `model package`: The Entities
+- `service`: The implementation(s) of db package service specifications.
 
 
 
-### Persistence-speciﬁc instructions
-
-A persistence bundle is an OSGi bundle that contains one or more persistence descriptors (persistence.xml files) and has a Meta-Persistence header in the bundle manifest, META-INF/MANIFEST.MF. This header lists all the locations of persistence.xml files in the persistence bundle. When this header is present, the default location, `META-INF/persistence.xml`, is added by default. Therefore, when the persistence.xml files are in the default location, the Meta-Persistence header must be present, but its content can be empty (a single space). The following example of a Meta-Persistence header defines a persistence bundle in entities. It could have more than one peristant `Meta-Persistence` entries though. Any persistence.xml files that are in the default location can also be used.
-In OSGi, `DynamicImport-Package` attribute is used in the MANIFEST.MF file to specify the patterns of packages that are not found in the normal bundle contents or Import-Package field. If the package is not available in the initial resolution process, it will not fail, but will be attempted to resolve every time a class from the package is required. In this case `hibernate` and `javassist` packages are included.
-In order not to enter manually the mandatory entries to the MANIFEST.MF, `org.apache.felix maven-bundle-plugin` can be used for declaring these entries at pom.xml:
-
-```xml
-<!-- ... -->
-<Meta-Persistence>META-INF/persistence.xml</Meta-Persistence>
-<DynamicImport-Package>org.hibernate,org.hibernate.proxy,javassist.util.proxy</ DynamicImport-Package>
-<!-- ... -->
-```
-
-
-### persistence.xml
-
-The persistence.xml file is a standard configuration file in JPA. It has to be included in the META-INF directory inside the JAR file that contains the entity beans. The persistence.xml file must define a persistence-unit with a unique name in the current scoped classloader. The provider attribute specifies the underlying implementation of the JPA EntityManager.
-
-```xml
-    <persistence-unit name="owt7PU" transaction-type="JTA">
-     <!-- The jta-data-source points to the JNDI name of the database this persistence unit maps to. -->
-        <jta-data-source>osgi:service/javax.sql.DataSource/(osgi.jndi.service.name=owt7-ds)</jta-data-source>
-        <!-- declare the list of entities here: -->
-        <class>com.owt7.model.MessageChat</class>
-        <!-- auto-create the database schema -->
-        <properties>
-            <property name="hibernate.hbm2ddl.auto" value="update" />
-        </properties>
-    </persistence-unit>
-```
+>### Persistence-speciﬁc instructions
+>
+>A persistence bundle is an OSGi bundle that contains one or more persistence descriptors (persistence.xml files) and has a Meta-Persistence 
+>header in the bundle manifest, META-INF/MANIFEST.MF. This header lists all the locations of persistence.xml files in the persistence bundle. 
+>When this header is present, the default location, `META-INF/persistence.xml`, is added by default. Therefore, when the persistence.xml files 
+>are in the default location, the Meta-Persistence header must be present, but its content can be empty (a single space). The following 
+>example of a Meta-Persistence header defines a persistence bundle in entities. It could have more than one peristant `Meta-Persistence` 
+>entries though. Any persistence.xml files that are in the default location can also be used.
+>In OSGi, `DynamicImport-Package` attribute is used in the MANIFEST.MF file to specify the patterns of packages that are not found in the 
+>normal bundle contents or Import-Package field. If the package is not available in the initial resolution process, it will not fail, but will 
+>be attempted to resolve every time a class from the package is required. In this case `hibernate` and `javassist` packages are included.
+>In order not to enter manually the mandatory entries to the MANIFEST.MF, `org.apache.felix maven-bundle-plugin` can be used for declaring 
+>these entries at pom.xml:
+>
+>```xml
+><!-- ... -->
+><Meta-Persistence>META-INF/persistence.xml</Meta-Persistence>
+><DynamicImport-Package>org.hibernate,org.hibernate.proxy,javassist.util.proxy</ DynamicImport-Package>
+><!-- ... -->
+>```
 
 
-
-
-### Entities
-
-An entity is a lightweight persistence domain object. Typically an entity represents a table in a relational database, and each entity instance corresponds to a row in that table. The primary programming artifact of an entity is the entity class, although entities can use helper classes. The persistent state of an entity is represented either through persistent fields or persistent properties. These fields or properties use object/relational mapping annotations to map the entities and entity relationships to the relational data in the underlying data store.
-
-
-```java
-@Entity
-public class MessageChat {
-    @Id
-    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="ids_gen")
-    @SequenceGenerator(
-            name="ids_gen",
-            sequenceName="ids_sequence",
-            allocationSize=20
-        )
-    private Integer id;
-       
-// private fields + getters and setters
-```
-### Defining An Entity
-
-The @Id annotation marks a field as a primary key field.
-
-The @GeneratedValue annotation may be applied to a primary key property or field of an entity or mapped superclass in conjunction with the Id annotation. The use of the GeneratedValue annotation is only required to be supported for simple primary keys. Use of the GeneratedValue annotation is not supported for derived primary keys.
-- _strategy_(Optional): The primary key generation strategy that the persistence provider must use to generate the annotated entity primary key.
-- _generator_ (Optional): The name of the primary generator to use as specified in the SequenceGenerator or TableGenerator.
-
-
-The @SequenceGenerator annotation defines a primary key generator that may be referenced by name when a generator element is specified for the GeneratedValue annotation.A sequence generator may be specified on the entity class or on the primary key field or property.
-@SequenceGenerator arguments:
-- name (Required): A unique generator name that can be referenced by one or more classes to be the generator for primary key values.
-- sequenceName (Optional): The name of the database sequence object from which to obtain primary key values.
-- initialValue (Optional): The value from which the sequence object is to start generating.
-- allocationSize (Optional): The amount to increment by when allocating sequence numbers from the sequence.
+>### persistence.xml
+>
+>The persistence.xml file is a standard configuration file in JPA. It has to be included in the META-INF directory inside the JAR file that 
+>contains the entity beans. The persistence.xml file must define a persistence-unit with a unique name in the current scoped classloader. The 
+>provider attribute specifies the underlying implementation of the JPA EntityManager.
+>
+>```xml
+>   <persistence-unit name="owt7PU" transaction-type="JTA">
+>     <!-- The jta-data-source points to the JNDI name of the database this persistence unit maps to. -->
+>        <jta-data-source>osgi:service/javax.sql.DataSource/(osgi.jndi.service.name=owt7-ds)</jta-data-source>
+>         <!-- declare the list of entities here: -->
+>        <class>com.owt7.model.MessageChat</class>
+>       <!-- auto-create the database schema -->
+>        <properties>
+>            <property name="hibernate.hbm2ddl.auto" value="update" />
+>        </properties>
+>    </persistence-unit>
+>```
+>
 
 
 
+>### Entities
+>
+>An entity is a lightweight persistence domain object. Typically an entity represents a table in a relational database, and each entity 
+>instance corresponds to a row in that table. The primary programming artifact of an entity is the entity class, although entities can use 
+>helper classes. The persistent state of an entity is represented either through persistent fields or persistent properties. These fields or 
+>properties use object/relational mapping annotations to map the entities and entity relationships to the relational data in the underlying 
+>data store.
+>
+>
+>```java
+>@Entity
+>public class MessageChat {
+>    @Id
+>    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="ids_gen")
+>    @SequenceGenerator(
+>            name="ids_gen",
+>            sequenceName="ids_sequence",
+>            allocationSize=20
+>        )
+>    private Integer id;
+>       
+>// private fields + getters and setters
+>```
+>### Defining An Entity
+>
+>The @Id annotation marks a field as a primary key field.
+>
+>The @GeneratedValue annotation may be applied to a primary key property or field of an entity or mapped superclass in conjunction 
+with the Id annotation. The use of the GeneratedValue annotation is only required to be supported for simple primary keys. Use of 
+the GeneratedValue annotation is not supported for derived primary keys.
+> - _strategy_(Optional): The primary key generation strategy that the persistence provider must use to generate the annotated 
+>entity primary key.
+> - _generator_ (Optional): The name of the primary generator to use as specified in the SequenceGenerator or TableGenerator.
+>
+>
+>The @SequenceGenerator annotation defines a primary key generator that may be referenced by name when a generator element is 
+>specified for the GeneratedValue annotation.A sequence generator may be specified on the entity class or on the primary key field 
+>or property.
+>@SequenceGenerator arguments:
+>- name (Required): A unique generator name that can be referenced by one or more classes to be the generator for primary key values.
+>- sequenceName (Optional): The name of the database sequence object from which to obtain primary key values.
+>- initialValue (Optional): The value from which the sequence object is to start generating.
+>- allocationSize (Optional): The amount to increment by when allocating sequence numbers from the sequence.
+>
 
 
-### The EchoServiceDao Implementation
-The  EchoServiceDao
-
-```java
-
-@Singleton
-@Transactional
-@OsgiServiceProvider(classes = { EchoServiceDao.class })
-public class EchoServiceDaoImpl implements EchoServiceDao {
- 
-    //...
-
-```
-
-The @Transactional (javax.transaction.Transactional) annotation provides the application the ability to declaratively control transaction boundaries on CDI managed beans, as well as classes defined as managed beans by the Java EE specification, at both the class and method level where method level annotations override those at the class level.
-
-
-
-
-#### PersistenceContext and EntityManager
-The EntityManager itself is created by the container using the information in the persistence.xml, so to use it at runtime, we simply need to request it be injected into one of our components. We do this via @PersistenceContext. The @PersistenceContext annotation can be used on any CDI bean, Servlet, Servlet Listener, Servlet Filter, or JSF ManagedBean. Also note that a transaction is required for any of the create, update or delete methods of the EntityManager to work.
-
-Example usage of EntityManager at the EchoServiceDao:
-```java
-// EntityManager declaration:
-	@PersistenceContext(unitName = "owt7PU")
-	private EntityManager em;
-  
-	//EntityManager storing the messageChat entity:
-	em.persist(messageChat);
-
-```
-
-
+>
+>### The EchoServiceDao Implementation
+>The  EchoServiceDao
+>
+>```java
+>
+>@Singleton
+>@Transactional
+>@OsgiServiceProvider(classes = { EchoServiceDao.class })
+>public class EchoServiceDaoImpl implements EchoServiceDao {
+> 
+>    //...
+>
+>```
+>
+>The @Transactional (javax.transaction.Transactional) annotation provides the application the ability to declaratively control 
+>transaction boundaries on CDI managed beans, as well as classes defined as managed beans by the Java EE specification, at both the 
+>class and method level where method level annotations override those at the class level.
+>
+>
+>
+>
+>#### PersistenceContext and EntityManager
+>The EntityManager itself is created by the container using the information in the persistence.xml, so to use it at runtime, we 
+>simply need to request it be injected into one of our components. We do this via @PersistenceContext. The @PersistenceContext 
+>annotation can be used on any CDI bean, Servlet, Servlet Listener, Servlet Filter, or JSF ManagedBean. Also note that a transaction 
+>is required for any of the create, update or delete methods of the EntityManager to work.
+>
+>Example usage of EntityManager at the EchoServiceDao:
+>```java
+>// EntityManager declaration:
+>	@PersistenceContext(unitName = "owt7PU")
+>	private EntityManager em;
+>  
+>	//EntityManager storing the messageChat entity:
+>	em.persist(messageChat);
+>
+>```
+>
+>
 
 #### The Manifest
 The Manifest of bundle-db:
@@ -350,23 +370,13 @@ To list all the services that implemt javax.sql.DataSource
 
     service:list javax.sql.DataSource
 
+This service was autogenerated by pax-jdbc config
 ```
 
  ![](img/datasourceService.png)
 
 
 ` osgi.jndi.service.name = owt7-ds`
-
-
-# auto to service to dhmiourghse to pax-jdbc config... !!
-
-```xml
-
-```
-
-
-
-#############################################
 
 
 Calling the EchoService at http://localhost:8181/:
