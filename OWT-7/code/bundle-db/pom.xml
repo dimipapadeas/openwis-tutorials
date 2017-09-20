@@ -32,6 +32,7 @@
 						to scan -->
 					<scanPaths>
 						<scanPath>com.owt7.db</scanPath>
+						<scanPath>com.owt7.service</scanPath>
 					</scanPaths>
 				</configuration>
 				<executions>

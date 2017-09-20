@@ -10,7 +10,7 @@ import org.ops4j.pax.cdi.api.OsgiService;
 import org.ops4j.pax.cdi.api.OsgiServiceProvider;
 
 import com.owt7.api.EchoService;
-import com.owt7.api.EchoServiceDao;
+import com.owt7.api.EchoDatabaseService;
 import com.owt7.api.dto.MessageDTO;
 import com.owt7.lib.DemoUtil;
 
@@ -28,7 +28,7 @@ public class EchoServiceImpl implements EchoService {
 
 	@Inject
 	@OsgiService
-	private EchoServiceDao echoServiceDao;	
+	private EchoDatabaseService echoDatabaseService;	
 	
 	public String echo(String text) {
 
@@ -36,21 +36,21 @@ public class EchoServiceImpl implements EchoService {
 		MessageDTO message = new MessageDTO();
 		
 		message.setMessage(util.upperCaseIt(text));
-		Integer id = echoServiceDao.create(message);
+		Integer id = echoDatabaseService.create(message);
 		
 		int min = 1;
-		int max = 4;
+		int max = 2;
 		try {
 			int randomDelay = ThreadLocalRandom.current().nextInt(min, max + 1);
 			TimeUnit.SECONDS.sleep(randomDelay);
 			System.out.println("calling update with id "+ id);
 			
-			echoServiceDao.update(id);
+			echoDatabaseService.update(id);
 			
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		return echoServiceDao.get(id).getMessage();
+		return echoDatabaseService.get(id).getMessage();
 	}
 
 }
