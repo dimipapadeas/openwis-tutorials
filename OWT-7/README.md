@@ -92,6 +92,7 @@ This bundle contains all the database interaction components. It contains the pe
 >In OSGi, `DynamicImport-Package` attribute is used in the MANIFEST.MF file to specify the patterns of packages that are not found in the 
 >normal bundle contents or Import-Package field. If the package is not available in the initial resolution process, it will not fail, but will 
 >be attempted to resolve every time a class from the package is required. In this case `hibernate` and `javassist` packages are included.
+
 >In order not to enter manually the mandatory entries to the MANIFEST.MF, `org.apache.felix maven-bundle-plugin` can be used for declaring 
 >these entries at pom.xml:
 >
@@ -133,6 +134,27 @@ This bundle contains all the database interaction components. It contains the pe
 >properties use object/relational mapping annotations to map the entities and entity relationships to the relational data in the underlying 
 >data store.
 >
+>### Defining An Entity
+>
+>The `@Id` annotation marks a field as a primary key field.
+>
+>The `@GeneratedValue` annotation may be applied to a primary key property or field of an entity or mapped superclass in conjunction 
+with the Id annotation. The use of the GeneratedValue annotation is only required to be supported for simple primary keys. Use of 
+the GeneratedValue annotation is not supported for derived primary keys.
+> - _strategy_(Optional): The primary key generation strategy that the persistence provider must use to generate the annotated 
+>entity primary key.
+> - _generator_ (Optional): The name of the primary generator to use as specified in the SequenceGenerator or TableGenerator.
+>
+>
+>The `@SequenceGenerator` annotation defines a primary key generator that may be referenced by name when a generator element is 
+>specified for the GeneratedValue annotation.A sequence generator may be specified on the entity class or on the primary key field 
+>or property.
+>@SequenceGenerator arguments:
+>- _name_ (Required): A unique generator name that can be referenced by one or more classes to be the generator for primary key values.
+>- _sequenceName_ (Optional): The name of the database sequence object from which to obtain primary key values.
+>- _initialValue_ (Optional): The value from which the sequence object is to start generating.
+>- _allocationSize_ (Optional): The amount to increment by when allocating sequence numbers from the sequence.
+>
 >
 >```java
 >@Entity
@@ -148,33 +170,15 @@ This bundle contains all the database interaction components. It contains the pe
 >       
 >// private fields + getters and setters
 >```
->### Defining An Entity
->
->The @Id annotation marks a field as a primary key field.
->
->The @GeneratedValue annotation may be applied to a primary key property or field of an entity or mapped superclass in conjunction 
-with the Id annotation. The use of the GeneratedValue annotation is only required to be supported for simple primary keys. Use of 
-the GeneratedValue annotation is not supported for derived primary keys.
-> - _strategy_(Optional): The primary key generation strategy that the persistence provider must use to generate the annotated 
->entity primary key.
-> - _generator_ (Optional): The name of the primary generator to use as specified in the SequenceGenerator or TableGenerator.
->
->
->The @SequenceGenerator annotation defines a primary key generator that may be referenced by name when a generator element is 
->specified for the GeneratedValue annotation.A sequence generator may be specified on the entity class or on the primary key field 
->or property.
->@SequenceGenerator arguments:
->- name (Required): A unique generator name that can be referenced by one or more classes to be the generator for primary key values.
->- sequenceName (Optional): The name of the database sequence object from which to obtain primary key values.
->- initialValue (Optional): The value from which the sequence object is to start generating.
->- allocationSize (Optional): The amount to increment by when allocating sequence numbers from the sequence.
->
-
 
 >
->### The EchoServiceDao Implementation
+>### The database service: EchoServiceDao
+>
+>The `@Transactional` (javax.transaction.Transactional) annotation provides the application the ability to declaratively control 
+>transaction boundaries on CDI managed beans, as well as classes defined as managed beans by the Java EE specification, at both the 
+>class and method level where method level annotations override those at the class level.
+>
 >The  EchoServiceDao
->
 >```java
 >
 >@Singleton
@@ -185,17 +189,11 @@ the GeneratedValue annotation is not supported for derived primary keys.
 >    //...
 >
 >```
->
->The @Transactional (javax.transaction.Transactional) annotation provides the application the ability to declaratively control 
->transaction boundaries on CDI managed beans, as well as classes defined as managed beans by the Java EE specification, at both the 
->class and method level where method level annotations override those at the class level.
->
->
->
+
 >
 >#### PersistenceContext and EntityManager
->The EntityManager itself is created by the container using the information in the persistence.xml, so to use it at runtime, we 
->simply need to request it be injected into one of our components. We do this via @PersistenceContext. The @PersistenceContext 
+>The `EntityManager` itself is created by the container using the information in the persistence.xml, so to use it at runtime, we 
+>simply need to request it be injected into one of our components. We do this via @PersistenceContext. The `@PersistenceContext` 
 >annotation can be used on any CDI bean, Servlet, Servlet Listener, Servlet Filter, or JSF ManagedBean. Also note that a transaction 
 >is required for any of the create, update or delete methods of the EntityManager to work.
 >
@@ -220,7 +218,7 @@ The Manifest of bundle-db:
 
 
 
-###. Installing the Bundles on Karaf
+### Installing the Bundles on Karaf
 Before installing the bundles themselves, Karaf must me prepared as described below:
 
 #### Installing dependencies
@@ -250,22 +248,22 @@ Install `war feature`: to deploy web based modules:
 feature:install war
 ```
 
-#### Installing db interaction dependencies
+#### Installing Database Interaction Dependencies
 
 
 ####  Apache Aries
  The Aries project will deliver a set of pluggable Java components enabling an enterprise OSGi application programming model. This includes implementations and extensions of applicationfocused specifications deﬁned by the OSGi Alliance Enterprise Expert Group (EEG) and an assembly format for multi-bundle applications, for deployment to a variety of OSGi based runtimes.
 
 
-
- Enable the features
+ Enable the database related features :
 
    `feature:install jpa transaction jndi jdbc pax-jdbc pax-jdbc-pool-dbcp2 pax-jdbc-config hibernate `
 
-Install the database handler of your choice
+Install the database handler:
 
 feature:install pax-jdbc-h2
 
+> In this tutorial we use h2-DB.
 
 
 ### Installing: bundle-lib
@@ -307,9 +305,9 @@ bundle:install -s mvn:com.owt7.demo/bundle-db/1.0.0-SNAPSHOT
 ```
 
 
-#### Verify Database communication:
+#### Verify Database communication
 
-View all tables:
+View all tables of the datasource:
 
  jdbc:query owt7-ds SHOW TABLES
 
@@ -336,7 +334,7 @@ Wait process to finish at log :
 ![](img/configUpdatelog.png)
 
 
-### JDBC Registration test
+#### JDBC Registration test
 To list all the JDBC datasources installed in Karaf:
 
 ```
@@ -346,7 +344,7 @@ To list all the JDBC datasources installed in Karaf:
  ![](img/datasourceList.png)
 
 
-### JNDI Registration Test
+#### JNDI Registration Test
 
 Since bundle uses jpa, what is actually does is a jndi-lookup. To veiw registered jndi-lookups in Karaf cmd:
 
@@ -355,15 +353,14 @@ Since bundle uses jpa, what is actually does is a jndi-lookup. To veiw registere
  ![](img/registeredJndi.png)
 
 
-
-### Jdbc Test Query
+#### Jdbc Test Query
 
 jdbc:query owt7-ds select 1
 
 
 After istallation:
 
-### DataSource is a service
+#### DataSource is a service
 
 To list all the services that implemt javax.sql.DataSource
 
