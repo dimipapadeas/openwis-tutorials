@@ -355,7 +355,6 @@ Since bundle uses jpa, what is actually does is a jndi-lookup. To veiw registere
  ![](img/registeredJndi.png)
 
 
-##############################################
 
 ### Jdbc Test Query
 
