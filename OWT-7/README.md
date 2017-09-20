@@ -53,7 +53,7 @@ The Service implementation module.
 ### Connecting the services
 The implementation of EchoService must communicate with the database bundle via a new OSGi service EchoDatabaseService which will handle that interaction.
 To be able to call the new OSGi service, it must be injected properly:
-    ```java
+```java
     //...
     @Inject
     @OsgiService
